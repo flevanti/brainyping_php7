@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 
 class scr extends Command
 {
+
     /**
      * The name and signature of the console command.
      *
@@ -44,30 +45,39 @@ class scr extends Command
      */
     public function handle()
     {
-      $args = $this->getSplittedArguments();
-      $this->line( "So you want to run " . $this->argument('filename') . " with these arguments!!!");
-      $this->line(print_r($args,true));
-      
+        $args = $this->getSplittedArguments();
+        $this->line(
+          "So you want to run ".$this->argument(
+            'filename'
+          )." with these arguments!!!"
+        );
+        $this->line(print_r($args, true));
+        $mem = memory_get_usage(true) / 1024 / 1024;
+        $mem_peak = memory_get_peak_usage(true) / 1024 / 1024;
+        $this->warn("memory usage is $mem MB");
+        $this->warn("memory peak usage is $mem_peak MB");
+
     }
 
-  /**
-   * Return arguments splitted using defined delimiter
-   *
-   * If delimiter is found array element is key[delimiter]value
-   * If delimiter is not found array element is argument=true
-   *
-   * only first delimiter found is used to split argument string
-   *
-   * @return array
-   */
-    protected function getSplittedArguments() {
-      $args = [];
-      foreach ($this->argument('args') as $argument) {
-        $ret = explode($this->arguments_delimiter, $argument, 2);
-        $args[$ret[0]] = $ret[1] ?? true;
-      }
+    /**
+     * Return arguments splitted using defined delimiter
+     *
+     * If delimiter is found array element is key[delimiter]value
+     * If delimiter is not found array element is argument=true
+     *
+     * only first delimiter found is used to split argument string
+     *
+     * @return array
+     */
+    protected function getSplittedArguments()
+    {
+        $args = [];
+        foreach ($this->argument('args') as $argument) {
+            $ret = explode($this->arguments_delimiter, $argument, 2);
+            $args[$ret[0]] = $ret[1] ?? true;
+        }
 
-      return $args;
+        return $args;
 
     }
 
