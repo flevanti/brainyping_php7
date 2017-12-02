@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB as DB;
 
 class scr extends Command
 {
@@ -56,6 +57,9 @@ class scr extends Command
         $mem_peak = memory_get_peak_usage(true) / 1024 / 1024;
         $this->warn("memory usage is $mem MB");
         $this->warn("memory peak usage is $mem_peak MB");
+        
+        $this->line("Bye");
+
 
     }
 
