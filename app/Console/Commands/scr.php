@@ -13,7 +13,7 @@ class scr extends Command
      *
      * @var string
      */
-    protected $signature = 'scr {filename : php file to run} {--verb : info about the script to run} {args?* : optional arguments}';
+    protected $signature = 'scr {filename : php file to run} {args?* : optional arguments}';
 
     /**
      * The console command description.
@@ -38,13 +38,6 @@ class scr extends Command
     protected $base_scripts_location = "App/Scripts";
 
     /**
-     * provide information about the script we want to run
-     *
-     * @var bool
-     */
-    protected $verb = false;
-
-    /**
      * Create a new command instance.
      *
      * @return void
@@ -61,13 +54,12 @@ class scr extends Command
      */
     public function handle()
     {
-        $this->verb = $this->option('verb');
         $this->e("Welcome to run script command!");
         $args = $this->getSplittedArguments();
         $filename = $this->argument('filename');
-        $filename_full_path = base_path($this->base_scripts_location . DIRECTORY_SEPARATOR . $filename);
+        $filename_full_path = base_path($this->base_scripts_location.DIRECTORY_SEPARATOR.$filename);
         $this->e("So you want to run $filename with these arguments!!!");
-        $this->e(print_r($args, true), "line");
+        $this->e(json_encode($args), "line");
         $this->e("Script full path is $filename_full_path");
 
         $this->printMemInfo();
@@ -75,10 +67,15 @@ class scr extends Command
         if (file_exists($filename_full_path)) {
 
             $this->e("Including script $filename_full_path");
+            $this->e("----------------------------------------");
+            $script_time_spent = microtime(true);
 
-            require($filename_full_path);
+            $this->includeFileWrapper($filename_full_path, $args);
 
+            $script_time_spent = round(microtime(true) - $script_time_spent, 2);
+            $this->e("----------------------------------------");
             $this->e("Script completed its mission!");
+            $this->e("It took $script_time_spent seconds");
 
         } else {
             $this->e("Script $filename_full_path not found", "error");
@@ -86,7 +83,6 @@ class scr extends Command
         $this->printMemInfo();
 
         $this->e("Bye");
-
 
     }
 
@@ -107,6 +103,7 @@ class scr extends Command
             $ret = explode($this->arguments_delimiter, $argument, 2);
             $args[$ret[0]] = $ret[1] ?? true;
         }
+
         return $args;
     }
 
@@ -115,9 +112,6 @@ class scr extends Command
      */
     protected function printMemInfo()
     {
-        if (!$this->verb) {
-            return;
-        }
         $mem = round((memory_get_usage(true) / 1024 / 1024), 2);
         $mem_peak = round((memory_get_peak_usage(true) / 1024 / 1024), 2);
         $this->e("Some info about memory...");
@@ -126,15 +120,16 @@ class scr extends Command
     }
 
     /**
-     * Output text on screen base on verb and the level
+     * Output text on screen based on verb and the level
      *
      * @param $txt
      * @param null $level
      */
     protected function e($txt, $level = null)
     {
-        $level = $level ?? 'info';
-        if ($this->verb || $level == 'error')
+        if ($this->getOutput()->isVerbose() || $level == 'error') {
+
+            $txt = date("d-m-Y H:i:s")."    $txt";
 
             switch (true) {
                 case ($level == 'error'):
@@ -149,5 +144,19 @@ class scr extends Command
                 default:
                     $this->line($txt);
             }
+        }
     }
+
+    /**
+     * This is just a wrapper to include the file and make sure that no variables could be overwritten
+     *
+     * @param $filename_full_pat
+     * @param $args
+     */
+    protected function includeFileWrapper($filename_full_path, $args)
+    {
+        require($filename_full_path);
+    }
+
+
 }
