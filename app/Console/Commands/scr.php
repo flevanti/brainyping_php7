@@ -13,7 +13,7 @@ class scr extends Command
      *
      * @var string
      */
-    protected $signature = 'scr {filename : php file to run} {args?* : optional arguments}';
+    protected $signature = 'scr {filename : php file to run} {--verb : info about the script to run} {args?* : optional arguments}';
 
     /**
      * The console command description.
@@ -28,6 +28,21 @@ class scr extends Command
      * @var string
      */
     protected $arguments_delimiter = '=';
+
+    /**
+     * Base folder for custom scripts to include.
+     * This will force all scripts to be in the same folder.
+     *
+     * @var string
+     */
+    protected $base_scripts_location = "App/Scripts";
+
+    /**
+     * provide information about the script we want to run
+     *
+     * @var bool
+     */
+    protected $verb = false;
 
     /**
      * Create a new command instance.
@@ -46,19 +61,31 @@ class scr extends Command
      */
     public function handle()
     {
+        $this->verb = $this->option('verb');
+        $this->e("Welcome to run script command!");
         $args = $this->getSplittedArguments();
-        $this->line(
-          "So you want to run ".$this->argument(
-            'filename'
-          )." with these arguments!!!"
-        );
-        $this->line(print_r($args, true));
-        $mem = memory_get_usage(true) / 1024 / 1024;
-        $mem_peak = memory_get_peak_usage(true) / 1024 / 1024;
-        $this->warn("memory usage is $mem MB");
-        $this->warn("memory peak usage is $mem_peak MB");
-        
-        $this->line("Bye");
+        $filename = $this->argument('filename');
+        $filename_full_path = base_path($this->base_scripts_location . DIRECTORY_SEPARATOR . $filename);
+        $this->e("So you want to run $filename with these arguments!!!");
+        $this->e(print_r($args, true), "line");
+        $this->e("Script full path is $filename_full_path");
+
+        $this->printMemInfo();
+
+        if (file_exists($filename_full_path)) {
+
+            $this->e("Including script $filename_full_path");
+
+            require($filename_full_path);
+
+            $this->e("Script completed its mission!");
+
+        } else {
+            $this->e("Script $filename_full_path not found", "error");
+        }
+        $this->printMemInfo();
+
+        $this->e("Bye");
 
 
     }
@@ -80,9 +107,47 @@ class scr extends Command
             $ret = explode($this->arguments_delimiter, $argument, 2);
             $args[$ret[0]] = $ret[1] ?? true;
         }
-
         return $args;
-
     }
 
+    /**
+     * Output some statistics about memory
+     */
+    protected function printMemInfo()
+    {
+        if (!$this->verb) {
+            return;
+        }
+        $mem = round((memory_get_usage(true) / 1024 / 1024), 2);
+        $mem_peak = round((memory_get_peak_usage(true) / 1024 / 1024), 2);
+        $this->e("Some info about memory...");
+        $this->e("memory usage is $mem MB");
+        $this->e("memory peak usage is $mem_peak MB");
+    }
+
+    /**
+     * Output text on screen base on verb and the level
+     *
+     * @param $txt
+     * @param null $level
+     */
+    protected function e($txt, $level = null)
+    {
+        $level = $level ?? 'info';
+        if ($this->verb || $level == 'error')
+
+            switch (true) {
+                case ($level == 'error'):
+                    $this->error($txt);
+                    break;
+                case ($level == 'warning'):
+                    $this->warn($txt);
+                    break;
+                case ($level == 'info'):
+                    $this->info($txt);
+                    break;
+                default:
+                    $this->line($txt);
+            }
+    }
 }
