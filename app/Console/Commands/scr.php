@@ -35,7 +35,7 @@ class scr extends Command
      *
      * @var string
      */
-    protected $base_scripts_location = "App/Scripts";
+    protected $base_scripts_location = "app/Scripts";
 
     /**
      * Create a new command instance.
