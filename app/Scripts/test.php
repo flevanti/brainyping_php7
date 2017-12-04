@@ -23,20 +23,18 @@ $hosts_list = DB::select($sql, $sql_args);
 
 $this->e("Records retrieved: ".count($hosts_list));
 
-foreach ($hosts_list as $host_record) {
-    //$this->e("processing {$host->url}...");
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_HEADER, true);
+curl_setopt($ch, CURLOPT_NOBODY, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
-    $ch = curl_init();
+foreach ($hosts_list as $host_record) {
 
     curl_setopt($ch, CURLOPT_URL, $host_record->url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HEADER, true);
-    curl_setopt($ch, CURLOPT_NOBODY, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-
     curl_exec($ch);
     $curl_info = curl_getinfo($ch);
 
@@ -45,9 +43,8 @@ foreach ($hosts_list as $host_record) {
     $host = parse_url($curl_info['url']);
     $host = $host['scheme']."://".$host['host']."/";
 
-    curl_close($ch);
-    $ch = $curl_info = null;
-    unset($ch, $curl_info);
+    $curl_info = null;
+    unset($curl_info);
 
     DB::update(
         "update hosts set host=?, time_spent=?, http_code=? where id_ai__=?;",
@@ -56,6 +53,6 @@ foreach ($hosts_list as $host_record) {
 
     $this->e($host_record->url." ---> $http_code   $total_time   $host");
 
-
 }
 
+curl_close($ch);
