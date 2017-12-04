@@ -9,6 +9,10 @@
 /** @var  $this \App\Console\Commands\scr */
 $sql = "select * from hosts where http_code is null ";
 $sql_args = [];
+$current_dir = realpath(dirname(__FILE__));
+$agent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5";
+$cookiefile = uniqid("cookiefile_", true);
+$cookiejar = uniqid("cookiejar_", true);
 
 if (isset($args['batch_id'])) {
     $sql .= " and batch_id=?";
@@ -29,8 +33,13 @@ curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
 curl_setopt($ch, CURLOPT_NOBODY, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+//curl_setopt($ch,CURLOPT_COOKIESESSION,true);
+//curl_setopt($ch, CURLOPT_COOKIEFILE, $current_dir."/cookies/$cookiefile");
+//curl_setopt($ch, CURLOPT_COOKIEJAR, $current_dir."/cookies/$cookiejar");
+curl_setopt($ch, CURLOPT_USERAGENT, $agent);
+
 
 foreach ($hosts_list as $host_record) {
 
