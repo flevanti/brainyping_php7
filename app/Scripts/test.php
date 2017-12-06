@@ -10,7 +10,7 @@
 $sql = "select * from hosts where http_code is null ";
 $sql_args = [];
 $current_dir = realpath(dirname(__FILE__));
-$agent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5";
+$agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36";
 $cookiefile = uniqid("cookiefile_", true);
 $cookiejar = uniqid("cookiejar_", true);
 
@@ -31,7 +31,7 @@ $ch = curl_init();
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
-curl_setopt($ch, CURLOPT_NOBODY, true);
+//curl_setopt($ch, CURLOPT_NOBODY, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -42,15 +42,28 @@ curl_setopt($ch, CURLOPT_USERAGENT, $agent);
 
 
 foreach ($hosts_list as $host_record) {
+    if (gethostbyname($host_record->url) == $host_record->url) {
+        //domain not found
+        DB::update(
+            "update hosts set http_code='domainfail' where id_ai__=?;",
+            [$host_record->id_ai__]
+        );
+        $this->e($host_record->url." ---> Domain not found");
+        continue;
+    }
 
     curl_setopt($ch, CURLOPT_URL, $host_record->url);
     curl_exec($ch);
     $curl_info = curl_getinfo($ch);
 
-    $total_time = $curl_info['total_time'];
-    $http_code = $curl_info['http_code'];
-    $host = parse_url($curl_info['url']);
-    $host = $host['scheme']."://".$host['host']."/";
+    $total_time = $curl_info['total_time'] ?? 0;
+    $http_code = $curl_info['http_code'] ?? 'error';
+    if (isset($curl_info['url'])) {
+        $host = parse_url($curl_info['url']);
+        $host = $host['scheme']."://".$host['host']."/";
+    } else {
+        $host = null;
+    }
 
     $curl_info = null;
     unset($curl_info);
@@ -61,7 +74,6 @@ foreach ($hosts_list as $host_record) {
     );
 
     $this->e($host_record->url." ---> $http_code   $total_time   $host");
-
 }
 
 curl_close($ch);
